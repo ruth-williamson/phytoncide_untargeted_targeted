@@ -1,0 +1,85 @@
+---
+title: "chromeleon_untargeted_analysis"
+date: 'Last updated: `r Sys.Date()`'
+author: "Ruth Williamson"
+format: 
+  html:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    embed-resources: true
+---
+
+# Load in Libraries
+```{r}
+library(tidyverse)
+library(cowplot)
+library(readxl)
+theme_set(theme_cowplot())
+library(gt)
+library(openxlsx)
+library(lattice)
+library(janitor)
+library(snakecase)
+library(chemhelper)
+library(fuzzyjoin)
+```
+
+# Reading in test file 1
+```{r}
+f4hr_p14 <- read.xlsx("forest4hr_p14_extractedion.xlsx", "Sheet2", na.strings = "n.a.") |>
+  slice(-n()) |> # removes row with totals of columns
+  na.omit() # removes rows with NA that that were not integrating and needed to be removed
+```
+
+> General information gathered from this import:
++ There are 87 unique compounds represented
+
+# Reading in test file 2
+```{r}
+f4hr_p14_tic <- read.xlsx("forest4hr_p14_tic.xlsx", "Sheet2", na.strings = "n.a.") |>
+   slice(-n()) # removes row with totals of columns
+```
+
+> General information gathered from this import:
++ There are 87 unique compounds represented
+
+# Reading in Alkane Info
+```{r}
+nrt <- read.xlsx("Alkane_RT_fto.xlsx")
+```
+
+
+# Retention Index Calculations
+
+Retention indexes are calculated by using the retention time of alkanes that proceed directly before and after the compound.The equation is as follows
+
+> Ix = 100n + 100(tx-tn) / (tn+1 − tn)
+
+The package I would like to use for this is: chemhelper by Eric R. Scott
+
+To cite package ‘chemhelper’ in publications use:
+
+Scott E (2023). chemhelper: Helper Functions For Dealing With GCMS and LCMS data from IonAnalytics. R package version 0.0.0.9000, https://github.com/aariq/chemhelper.
+
+Testing one retention index and comparing it to hand calculation
+```{r}
+calc_RI(8.551333, nrt$rt, nrt$carbon_num)
+
+#my hand calculation resulted in 884.6
+```
+
+```{r}
+f4hr_p14_tic_ri <- f4hr_p14_tic |>
+  mutate(ri = calc_RI(RetentionTime, nrt$rt, nrt$carbon_num))
+```
+
+> 20 of the compounds fell outside the alkane range and were mathematically extrapolated using the chemhelper function.
+
+```{r}
+f4hr_p14_ri <- f4hr_p14 |>
+  mutate(ri = calc_RI(RetentionTime, nrt$rt, nrt$carbon_num))
+```
+
+> 16 of the compounds fell outside the alkane range and were mathematically extrapolated using the chemhelper function.
+
