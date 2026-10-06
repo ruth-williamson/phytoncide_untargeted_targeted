@@ -1,0 +1,51 @@
+---
+title: "Targeted Analysis of Missouri Summer 2026 Sampling"
+date: 'Last updated: `r Sys.Date()`'
+author: "Ruth Williamson"
+format: 
+  html:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    embed-resources: true
+---
+# Load in ya Libraries
+```{r}
+library(tidyverse)
+library(cowplot)
+library(readxl)
+theme_set(theme_cowplot())
+library(factoextra)
+library(knitr)
+library(gt)
+library(openxlsx)
+library(nlme)
+library(lmtest)
+library(AICcmodavg)
+library(lattice)
+```
+
+# Read in Data
+```{r}
+phyto_dat <- read.csv("phytoncide_utt_mo_2026_dat")
+
+phyto_dat$time <- factor(phyto_dat$time) #changing time to factor
+
+phyto_dat$pump <- factor(phyto_dat$pump) #changing pump to factor
+
+glimpse(phyto_dat)
+
+unique(phyto_dat$time)
+
+#pump_dat <- read_xlsx("tidy_pump_counts_ubc.xlsx", na = "na") #need to get tidy pump data in and fix the pump issues from the sampling.
+
+#unique(pump_dat$time)
+
+#pump_dat$time <- factor(pump_dat$time,levels = c("900","1030", "1110", "1200", "1330", "1500")) #changing time to factor 
+
+#pump_dat$day <- as.character(pump_dat$day)
+
+#glimpse(pump_dat)
+```
+
+> for when you come back...get the pump data in and organized :)
