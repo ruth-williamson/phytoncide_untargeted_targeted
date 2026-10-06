@@ -17,7 +17,6 @@ library(stringr)
 library(janitor)
 ```
 
-
 --------------------------------------------
 Function to turn xml into tibble
 
@@ -84,15 +83,16 @@ extract_metadata <- function(path) {
     str_extract(sample_dir, "p\\d+"),
     NA_character_
   )
-
-   time = if_else(
-      sample_type %in% c("sample", "control"),
-      str_extract(sample_dir, "(?<=_)\\d{3,4}(?=_)|(?<=_)\\d{3,4}$"),
-      NA_character_
-      )
+  
+  time = if_else(
+    sample_type %in% c("sample", "control"),
+    str_extract(sample_dir, "\\d+hr"),
+    NA_character_
+  )
+  
 #edit these for your own specific variables you want to keep track of   
-  location <- str_extract(project_dir, "como|forest|field")
-  season   <- str_extract(project_dir, "spring|summer|fall|winter")
+  location <- str_extract(project_dir, "como|forest")
+  season   <- "summer" #hard coding summer in here since they are all summer
   year     <- str_extract(project_dir, "\\d{4}")
   mix      <- str_extract(xml_name, "mix\\d+")
   blk_num <- str_extract(sample_dir, "blk_\\d+")
@@ -117,7 +117,7 @@ extract_metadata <- function(path) {
     TRUE ~ NA_character_)
 
   tibble(
-    project   = project_dir,
+    project   = "phytoncide_utt_mo_2026",
     type      = sample_type,
     pump      = pump,
     blk_num   = blk_num,
@@ -198,8 +198,8 @@ compound_types <- cols(
 put file here
 
 ```{r}
-phytoncide_dat <- read_all_xmls( #put the name of your data table here
-  root_dir = "phytoncide_collection_data_raw_xmls/", #put your data file you want to read in here
+phyto_2026_MO_dat <- read_all_xmls( #put the name of your data table here
+  root_dir = "phytoncide_collection_mo2026_raw_xmls/", #put your data file you want to read in here
   col_types = compound_types) |> 
   clean_names() |> #cleans column names
   mutate(peak_name = peak_name |>
@@ -207,7 +207,7 @@ phytoncide_dat <- read_all_xmls( #put the name of your data table here
            str_to_lower() |>
            str_replace_all(" ", "_")) #cleans the compound names
 
-glimpse(phytoncide_dat)
+glimpse(phyto_2026_MO_dat)
 ```
 
 ------------------------------------------
@@ -221,26 +221,28 @@ Sanity Checking that the data made it in correctly
 
 ```{r}
 #check that rows match:
-expected_rows <- (16*35)*3+(17*35)*3
+expected_rows <- (16*35) #(tubes*compounds)
 
-if (nrow(foresttest) != expected_rows) {
+if (nrow(phyto_2026_MO_dat) != expected_rows) {
   warning("Row count does not match expected value!")
 }
 
 #checking the compound counts per mix. Should be 10 for mixes 1-3 and 5 for mix 4.
-compound_counts <- foresttest |>
-  count(sample_ID, name = "n_compounds")
+compound_counts <- phyto_2026_MO_dat |>
+  count(sample_id, name = "n_compounds")
 
 compound_counts
 
 #can run unique on rows to make sure there aren't any typos or strange errors.
-unique(foresttest$location)
+unique(phyto_2026_MO_dat$location)
 
-unique(foresttest$type)
+unique(phyto_2026_MO_dat$type)
 
-unique(foresttest$year)
+unique(phyto_2026_MO_dat$year)
 
-unique(foresttest$mix)
+unique(phyto_2026_MO_dat$mix)
+
+unique(phyto_2026_MO_dat$time)
 
 ```
 
