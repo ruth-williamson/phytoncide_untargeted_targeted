@@ -9,7 +9,7 @@ format:
     toc_float: true
     embed-resources: true
 ---
-# HIIIIIIII
+
 # Load in Libraries
 ```{r}
 library(tidyverse)
@@ -23,6 +23,7 @@ library(janitor)
 library(snakecase)
 library(chemhelper)
 library(fuzzyjoin)
+library(webchem)
 ```
 
 # Reading in test file 1
@@ -83,3 +84,51 @@ f4hr_p14_ri <- f4hr_p14 |>
 
 > 16 of the compounds fell outside the alkane range and were mathematically extrapolated using the chemhelper function.
 
+#Testing webchem
+```{r}
+CASs <- c("83-34-1", "119-36-8", "123-35-3", "19700-21-1")
+
+RIs <-
+  nist_ri(
+    query = CASs,
+    from = "cas",
+    type = "linear",
+    polarity = "non-polar",
+    temp_prog = "ramp"
+  )
+head(RIs)
+
+library(stringr)
+RIs_filtered <-
+  RIs %>%
+  filter(gas == "Helium",
+         between(length, 20, 30),
+         str_detect(phase, "5"),
+         diameter < 0.3,
+         thickness == 0.25) %>% 
+  rename(CAS = query)
+head(RIs_filtered)
+
+RIs_filtered %>% 
+  group_by(CAS) %>% 
+  summarise(mean_RI = mean(RI))
+
+best_RIs <-
+  RIs_filtered %>%
+  group_by(CAS) %>% 
+  filter(RI == median(RI)) %>% 
+  filter(row_number() == 1) %>% 
+  select(CAS, RI, reference)
+best_RIs
+
+cir_query("o-Xylene", "cas")
+```
+
+#using chemlook
+```{r}
+library(chemlook)
+
+name_querey <- cl_query('1071-83-6', from = 'cas')
+```
+
+>note for when you return, so the webchem is kinda working but needs the CAS numbers, so you need to go export those files again, but add the CAS numbers and then fill in the gaps of the missing CAS numbers before the RI search can work.

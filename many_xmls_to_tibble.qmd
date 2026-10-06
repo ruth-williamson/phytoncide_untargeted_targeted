@@ -1,6 +1,8 @@
 ---
 title: "Thermal_Desorption_XML_to_CSV"
 format: html
+editor_options: 
+  chunk_output_type: console
 ---
 
 This was written with the help of Microsoft CoPilot, the code was comprehended and edited by me, Ruth Williamson, and I take full responsibility for the use and product.
@@ -213,7 +215,7 @@ glimpse(phyto_2026_MO_dat)
 ------------------------------------------
 Write ya CSV out!
 ```{r}
-#write_csv(phytoncide_dat, "phytoncide_dat") #uncomment this line when you are ready to get your csv
+write_csv(phyto_2026_MO_dat, "phytoncide_utt_mo_2026_dat") #uncomment this line when you are ready to get your csv
 ```
 
 -------------------------------------------
