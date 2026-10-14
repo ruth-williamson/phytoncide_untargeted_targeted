@@ -28,9 +28,8 @@ library(webchem)
 
 # Reading in test file 1
 ```{r}
-f4hr_p14 <- read.xlsx("forest4hr_p14_extractedion.xlsx", "Sheet2", na.strings = "n.a.") |>
-  slice(-n()) |> # removes row with totals of columns
-  na.omit() # removes rows with NA that that were not integrating and needed to be removed
+f4hr_p14 <- read.xlsx("forest_untargeted_results/forest4hr_p14_qic.xlsx", "Sheet2", na.strings = "n.a.") |>
+  slice(-n()) # removes row with totals of columns
 ```
 
 > General information gathered from this import:
@@ -38,7 +37,7 @@ f4hr_p14 <- read.xlsx("forest4hr_p14_extractedion.xlsx", "Sheet2", na.strings = 
 
 # Reading in test file 2
 ```{r}
-f4hr_p14_tic <- read.xlsx("forest4hr_p14_tic.xlsx", "Sheet2", na.strings = "n.a.") |>
+f4hr_p14_tic <- read.xlsx("forest_untargeted_results/forest4hr_p14_tic.xlsx", "Sheet2", na.strings = "n.a.") |>
    slice(-n()) # removes row with totals of columns
 ```
 
@@ -75,7 +74,7 @@ f4hr_p14_tic_ri <- f4hr_p14_tic |>
   mutate(ri = calc_RI(RetentionTime, nrt$rt, nrt$carbon_num))
 ```
 
-> 20 of the compounds fell outside the alkane range and were mathematically extrapolated using the chemhelper function.
+> 38 of the compounds fell outside the alkane range and were mathematically extrapolated using the chemhelper function.
 
 ```{r}
 f4hr_p14_ri <- f4hr_p14 |>
