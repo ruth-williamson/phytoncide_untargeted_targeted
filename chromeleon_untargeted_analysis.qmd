@@ -24,6 +24,7 @@ library(snakecase)
 library(chemhelper)
 library(fuzzyjoin)
 library(webchem)
+library(writexl)
 ```
 
 # Reading in test file 1
@@ -123,6 +124,53 @@ best_RIs
 cir_query("o-Xylene", "cas")
 ```
 
+#Testing 
+```{r}
+RIs_test <-
+  nist_ri(
+    query = unique(f4hr_p14_ri$CAS), #pulls just the unique CAS numbers from the list
+    from = "cas",
+    type = "kovats",
+    polarity = "non-polar",
+    temp_prog = "ramp"
+  )
+head(RIs_test)
+
+RIs_filtered_test <-
+  RIs_test |>
+  filter(gas == "Helium") |>
+  rename(CAS = query)
+
+head(RIs_filtered)
+
+pubchem_id_test <- #using formula to find pubchem id
+  get_cid(
+  query = unique(f4hr_p14_ri$Chem.Formula),
+  match = "ask",
+  from = "formula")
+```
+
+```{r}
+#hold the freaking phone, I think this may have worked
+myRIs_nametest <-
+  nist_ri(
+    query = unique(f4hr_p14_ri$Peakname),
+    from = "name",
+    type = c("linear", "kovats"),
+    polarity = "non-polar",
+    temp_prog = "ramp"
+  )
+
+#so this kinda worked???
+#still not super happy with how this is working but at least we have some progress.
+
+observed_ri_avg <- 
+  f4hr_p14_ri %>% 
+  group_by(Peakname) %>% 
+  summarise(avg_ri = mean(ri),
+            n = n())
+```
+
 #using chemlook
 ```{r}
 library(chemlook)
@@ -131,3 +179,71 @@ name_querey <- cl_query('1071-83-6', from = 'cas')
 ```
 
 >note for when you return, so the webchem is kinda working but needs the CAS numbers, so you need to go export those files again, but add the CAS numbers and then fill in the gaps of the missing CAS numbers before the RI search can work.
+
+>note for tomorrow, maybe make sure that the tic and the untargeted are the same? Try to get at least a list of tentative ID's and RT. No confirmation yet, but lot's of options. Maybe run the list through an ai to get some common names and id some biologically important options.
+
+# Reading in all the files and getting the average experimental ri for each compound
+```{r}
+# makes list of files in this folder matching naming scheme
+files <- list.files(
+  "forest_untargeted_results",
+  pattern = "_(qic|tic)\\.xlsx$",
+  full.names = TRUE)
+
+# reading in alkane mix
+nrt <- read.xlsx("Alkane_RT_fto.xlsx")
+
+#running function on all files to organize and rename them
+all_peaks <- map_dfr(files, function(f) {
+
+  read.xlsx(f, "Sheet2", na.strings = "n.a.") |>
+    slice(-n()) |>
+    mutate(
+      ri = calc_RI(RetentionTime, nrt$rt, nrt$carbon_num),
+      file = basename(f),
+      sample_id = str_remove(basename(f), "_(qic|tic)\\.xlsx$"),
+      file_type = str_extract(basename(f), "(?<=_)(qic|tic)(?=\\.xlsx)")
+    )
+})
+
+#did a sanity check on the amount of observations and it checks out :)
+```
+
+# filtering out blanks
+```{r}
+# compounds found in blanks
+blank_peaks <- all_peaks |>
+  filter(str_detect(sample_id, "blk")) |>
+  distinct(Peakname)
+
+# keep only compounds not found in blanks
+sample_peaks <- all_peaks |>
+  filter(!str_detect(sample_id, "blk")) |>
+  anti_join(blank_peaks, by = "Peakname")
+```
+
+# filter out tic -> grouping by sample_id and peak name -> summarizing retention index
+```{r}
+avg_ri_all <- 
+  sample_peaks |>
+  filter_out(file_type == "tic") |>
+  group_by(sample_id, Peakname) |>
+  summarise(avg_ri = mean(ri),
+            n = n(),
+            CAS = first(CAS),
+            avg_area = mean(Area))
+
+#exporting one file to do manual retention index checks on just to see how far off left field we are
+f4hr_ri_p9_ri <- avg_ri_all |>
+  filter(sample_id == "forest4hr_p9")
+
+write_xlsx(f4hr_ri_p9_ri, "forest_pump9_ri_check.xlsx")
+
+#list of unique compounds
+unique_compounds <- sample_peaks |>
+  distinct(Peakname)
+#found 190 unique compounds after blank subtraction
+```
+
+>note for when you come back. Find a way to visualize the detection and relative abundance of these. Heatmap (metabo may have a way to do this)
+> But first you must manual confirm one file using the nist database in the lab (-_-)
